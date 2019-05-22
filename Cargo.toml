@@ -1,0 +1,7 @@
+[package]
+name = "raytracer"
+version = "0.1.0"
+authors = ["Marc O'Morain <marc@circleci.com>"]
+edition = "2018"
+
+[dependencies]
