@@ -1,5 +1,7 @@
+#![allow(dead_code)]
 
 use std::ops::Sub;
+use std::ops::Add;
 
 #[derive(Debug)]
 struct Tuple(f32, f32, f32, f32);
@@ -12,6 +14,18 @@ impl Sub for &Tuple {
                      self.1 - other.1,
                      self.2 - other.2,
                      self.3 - other.3
+        );
+    }
+}
+
+impl Add for &Tuple {
+    type Output = Tuple;
+
+    fn add(self, other: &Tuple) -> Tuple {
+        return Tuple(self.0 + other.0,
+                     self.1 + other.1,
+                     self.2 + other.2,
+                     self.3 + other.3
         );
     }
 }
@@ -73,7 +87,7 @@ mod tests {
 
         assert!(!is_point(&a));
         assert!(is_vector(&a));
-    }
+}
 
     #[test]
     fn point_creates_tuples_with_w_1 () {
