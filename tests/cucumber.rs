@@ -1,6 +1,20 @@
 #[macro_use]
 extern crate cucumber_rust;
 
+use raytracer::tuple;
+use std::str::FromStr;
+use std::error::Error;
+use std::string::String;
+
+fn build_tuple(s: &[String]) -> Result<tuple::Tuple, Box<Error>> {
+    let mut result = try!(tuple::Tuple(
+            s[1].parse::<f32>()?,
+            s[2].parse::<f32>()?,
+            s[3].parse::<f32>()?,
+            s[4].parse::<f32>()?));
+            //return result;
+}
+
 #[derive(Debug)]
 pub struct MyWorld {
     // You can use this struct for mutable context in scenarios.
@@ -24,11 +38,21 @@ mod example_steps {
     // Any type that implements cucumber_rust::World + Default can be the world
     steps!(MyWorld => {
 
-        // given regex r"a ← tuple(.*)" |world, step| {
-        //     // 8(4.3, -4.2, 3.1, 0.0)
-        //     println!("step = %s", step)
+         given regex r"(\w*) ← tuple\((\S+) (\S+) (\S+) (\S+)\)" |world, matches, step| {
+             // 8(4.3, -4.2, 3.1, 0.0)
 
-        // }
+             let name = matches[1];
+             let t = tuple(
+                 matches[2].parse::<f32>()?,
+                 matches[3].parse::<f32>()?,
+                 matches[4].parse::<f32>()?,
+                 matches[5].parse::<f32>()?,
+             );
+
+
+             println!("the tuple {:?} is {:?}", name, t);
+
+         };
          given "I am trying out Cucumber" |world, step| {
              world.foo = "Some string".to_string();
              format!("step = {0}", "foo");
