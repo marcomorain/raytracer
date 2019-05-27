@@ -1,24 +1,40 @@
-#[macro_use]
-extern crate cucumber_rust;
+extern crate raytracer;
 
-use raytracer::tuple;
-use std::str::FromStr;
+use std::collections::HashMap;
 use std::error::Error;
 use std::string::String;
 
-fn build_tuple(s: &[String]) -> Result<tuple::Tuple, Box<Error>> {
-    let mut result = try!(tuple::Tuple(
-            s[1].parse::<f32>()?,
-            s[2].parse::<f32>()?,
-            s[3].parse::<f32>()?,
-            s[4].parse::<f32>()?));
-            //return result;
-}
+use raytracer::tuple;
+
+#[macro_use]
+extern crate cucumber_rust;
 
 #[derive(Debug)]
 pub struct MyWorld {
-    // You can use this struct for mutable context in scenarios.
-    foo: String
+    tuples: HashMap<String, tuple::Tuple>,
+}
+
+fn tuple_field(t: &tuple::Tuple, f: &String) -> Result<f32, Box<Error>> {
+  return match f.as_ref() {
+      "x" => Ok(t.0),
+      "y" => Ok(t.1),
+      "z" => Ok(t.2),
+      "w" => Ok(t.3),
+      _ => return Err("No matching field".into())
+  }
+}
+
+fn build_tuple(world: &mut MyWorld, s: &[String]) -> Result<(), Box<Error>> {
+    world.tuples.insert(
+        s[1].clone(),
+        tuple::Tuple(
+            s[2].parse::<f32>()?,
+            s[3].parse::<f32>()?,
+            s[4].parse::<f32>()?,
+            s[5].parse::<f32>()?,
+        ),
+    );
+    return Ok(());
 }
 
 impl cucumber_rust::World for MyWorld {}
@@ -26,7 +42,7 @@ impl std::default::Default for MyWorld {
     fn default() -> MyWorld {
         // This function is called every time a new scenario is started
         MyWorld {
-            foo: "a default string".to_string()
+            tuples: HashMap::new(),
         }
     }
 }
@@ -38,42 +54,58 @@ mod example_steps {
     // Any type that implements cucumber_rust::World + Default can be the world
     steps!(MyWorld => {
 
-         given regex r"(\w*) ← tuple\((\S+) (\S+) (\S+) (\S+)\)" |world, matches, step| {
-             // 8(4.3, -4.2, 3.1, 0.0)
-
-             let name = matches[1];
-             let t = tuple(
-                 matches[2].parse::<f32>()?,
-                 matches[3].parse::<f32>()?,
-                 matches[4].parse::<f32>()?,
-                 matches[5].parse::<f32>()?,
-             );
-
-
-             println!("the tuple {:?} is {:?}", name, t);
-
-         };
-         given "I am trying out Cucumber" |world, step| {
-             world.foo = "Some string".to_string();
-             format!("step = {0}", "foo");
-             // Set up your context in given steps
+         given regex r"(\w*) ← tuple\((\S+), (\S+), (\S+), (\S+)\)" |world, matches, step| {
+             let parsed = build_tuple(world, matches);
+             assert!(parsed.is_ok());
          };
 
-        // when "I consider what I am doing" |world, step| {
-        //     // Take actions
-        //     let new_string = format!("{}.", &world.foo);
-        //     world.foo = new_string;
-        // };
+        // a.x = 4.3
+        then regex r"(\w*)\.([w-z]) = ([\-\+]?[0-9]*(\.[0-9]+)?)" |world, matches, step| {
+            let t =  &world.tuples[&matches[1]];
 
-        // then "I am interested in ATDD" |world, step| {
-        //     // Check that the outcomes to be observed have occurred
-        //     assert_eq!(world.foo, "Some string.");
-        // };
+            let val = matches[3].parse::<f32>();
 
-        // then regex r"^we can (.*) rules with regex$" |world, matches, step| {
-        //     // And access them as an array
-        //     assert_eq!(matches[1], "implement");
-        // };
+            if val.is_err() {
+                panic!("parse error");
+            } else {
+                match tuple_field(&t, &matches[2]) {
+                    Ok(e) => assert_eq!(e, val.unwrap()),
+                    Err(e) => panic!("field error {:?}", e)
+                }
+            }
+        };
+
+        then regex r"(\w*) is a point" |world, matches, step| {
+            let name = &matches[1];
+            match world.tuples.get(name) {
+              Some(t) => assert!(tuple::is_point(t)),
+              None => panic!("no tuple named {:?}", name)
+            }
+        };
+
+        then regex r"(\w*) is not a point" |world, matches, step| {
+            let name = &matches[1];
+            match world.tuples.get(name) {
+              Some(t) => assert!(!tuple::is_point(t)),
+              None => panic!("no tuple named {:?}", name)
+            }
+        };
+
+        then regex r"(\w*) is a vector" |world, matches, step| {
+            let name = &matches[1];
+            match world.tuples.get(name) {
+              Some(t) => assert!(tuple::is_vector(t)),
+              None => panic!("no tuple named {:?}", name)
+            }
+        };
+
+        then regex r"(\w*) is not a vector" |world, matches, step| {
+            let name = &matches[1];
+            match world.tuples.get(name) {
+              Some(t) => assert!(!tuple::is_vector(t)),
+              None => panic!("no tuple named {:?}", name)
+            }
+        };
 
         // then regex r"^we can also match (\d+) (.+) types$" (usize, String) |world, num, word, step| {
         //     // `num` will be of type usize, `word` of type String
@@ -106,9 +138,7 @@ after!(an_after_fn => |scenario| {
 });
 
 // A setup function to be called before everything else
-fn setup() {
-
-}
+fn setup() {}
 
 cucumber! {
     features: "./features", // Path to our feature files
