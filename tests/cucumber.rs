@@ -86,14 +86,14 @@ mod example_steps {
 
     steps!(MyWorld => {
 
-         given regex r"(\w*) ← (tuple|point|vector)\((.*)\)" |world, matches, _step| {
+         given regex r"(\w+\d?) ← (tuple|point|vector)\((.*)\)" |world, matches, _step| {
              let name = &matches[1];
              let tuple = build_tuple(&matches[2], &matches[3]);
              world.tuples.insert(name.clone(), tuple);
          };
 
         // a.x = 4.3
-        then regex r"(\w*)\.([w-z]) = ([\-\+]?[0-9]*(\.[0-9]+)?)" |world, matches, _step| {
+        then regex r"(\w+\d?)\.([w-z]) = ([\-\+]?[0-9]*(\.[0-9]+)?)" |world, matches, _step| {
             let t =  &world.tuples[&matches[1]];
 
             let val = matches[3].parse::<f32>();
@@ -108,29 +108,27 @@ mod example_steps {
             }
         };
 
-
-
-        then regex r"(\w*) - (\w*) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
+        then regex r"(\w+\d?) - (\w+\d?) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
             let first = &world.tuples[&matches[1]];
             let second = &world.tuples[&matches[2]];
             let tuple = build_tuple(&matches[3], &matches[4]);
             assert_eq!(tuple, first - second);
         };
-        then regex r"(\w*) \+ (\w*) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
+        then regex r"(\w+\d?) \+ (\w+\d?) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
             let first = &world.tuples[&matches[1]];
             let second = &world.tuples[&matches[2]];
             let tuple = build_tuple(&matches[3], &matches[4]);
             assert_eq!(tuple, first + second);
         };
         // `Then p = tuple(4, -4, 3, 1)`
-        then regex r"^(\w*) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
+        then regex r"^(\w+\d?) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
             let name = &matches[1];
             println!("foo is {:?}", name);
             let tuple = build_tuple(&matches[2], &matches[3]);
             assert_eq!(world.tuples[name], tuple);
         };
 
-        then regex r"(\w*) is a point" |world, matches, _step| {
+        then regex r"(\w+\d?) is a point" |world, matches, _step| {
             let name = &matches[1];
             match world.tuples.get(name) {
               Some(t) => assert!(tuple::is_point(t)),
@@ -138,7 +136,7 @@ mod example_steps {
             }
         };
 
-        then regex r"(\w*) is not a point" |world, matches, _step| {
+        then regex r"(\w+\d?) is not a point" |world, matches, _step| {
             let name = &matches[1];
             match world.tuples.get(name) {
               Some(t) => assert!(!tuple::is_point(t)),
@@ -146,7 +144,7 @@ mod example_steps {
             }
         };
 
-        then regex r"(\w*) is a vector" |world, matches, _step| {
+        then regex r"(\w+\d?) is a vector" |world, matches, _step| {
             let name = &matches[1];
             match world.tuples.get(name) {
               Some(t) => assert!(tuple::is_vector(t)),
@@ -154,7 +152,7 @@ mod example_steps {
             }
         };
 
-        then regex r"(\w*) is not a vector" |world, matches, _step| {
+        then regex r"(\w+\d?) is not a vector" |world, matches, _step| {
             let name = &matches[1];
             match world.tuples.get(name) {
               Some(t) => assert!(!tuple::is_vector(t)),
