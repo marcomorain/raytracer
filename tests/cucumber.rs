@@ -1,5 +1,6 @@
 extern crate raytracer;
 
+use regex::Regex;
 use std::collections::HashMap;
 use std::error::Error;
 use std::string::String;
@@ -14,51 +15,59 @@ pub struct MyWorld {
     tuples: HashMap<String, tuple::Tuple>,
 }
 
+fn parse_float(input: &str) -> f32 {
+    let re = Regex::new(r"√(.)*").unwrap();
+    return match re.captures(input) {
+        None => input.parse::<f32>().unwrap(),
+        Some(m) => m[1].parse::<f32>().unwrap().sqrt(),
+    };
+}
+
+fn parse_rational(input: &str) -> f32 {
+    let parts = input
+        .split("/")
+        .map(|s| parse_float(s))
+        .take(2)
+        .collect::<Vec<f32>>();
+
+    if let [num, denom] = parts[..] {
+        return num / denom;
+    } else if let [val] = parts[..] {
+        return val;
+    }
+
+    panic!("failed to parse {:?}", input)
+}
+
 fn parse_floats(input: &str) -> Vec<f32> {
     let nums = input
         .split(", ")
-        .filter_map(|s| s.parse::<f32>().ok())
+        .map(|s| parse_rational(s))
         .collect::<Vec<_>>();
     return nums;
 }
 
 fn tuple_field(t: &tuple::Tuple, f: &String) -> Result<f32, Box<Error>> {
-  return match f.as_ref() {
-      "x" => Ok(t.0),
-      "y" => Ok(t.1),
-      "z" => Ok(t.2),
-      "w" => Ok(t.3),
-      _ => return Err("No matching field".into())
-  }
+    return match f.as_ref() {
+        "x" => Ok(t.0),
+        "y" => Ok(t.1),
+        "z" => Ok(t.2),
+        "w" => Ok(t.3),
+        _ => return Err("No matching field".into()),
+    };
 }
 
-fn build_point(world: &mut MyWorld, s: &[String]) -> Result<(), Box<Error>> {
-    world.tuples.insert(
-        s[1].clone(),
-        tuple::point(
-            s[2].parse::<f32>()?,
-            s[3].parse::<f32>()?,
-            s[4].parse::<f32>()?,
-        ),
-    );
-    return Ok(());
-}
+fn build_tuple(class: &String, data: &String) -> tuple::Tuple {
+    let vals = parse_floats(data);
+    println!("class is {:?}", class);
+    println!("vals is {:?}", vals);
 
-fn build_tuple(world: &mut MyWorld, s: &[String]) -> Result<(), Box<Error>> {
-    let name = &s[1];
-    let class = &s[2];
-    let vals = parse_floats(&s[3]);
-
-    let t = match class.as_ref() {
-        "tuple" => tuple::Tuple(vals[0], vals[1], vals[2], vals[3]),
+    return match class.as_ref() {
+        "tuple" => return tuple::Tuple(vals[0], vals[1], vals[2], vals[3]),
         "point" => tuple::point(vals[0], vals[1], vals[2]),
         "vector" => tuple::vector(vals[0], vals[1], vals[2]),
-        &_ => tuple::Tuple(0.0, 0.0, 0.0, 0.0)
+        _ => panic!("failed to parse tuple {:?} {:?}", class, vals),
     };
-
-    world.tuples.insert(name.clone(), t);
-
-    return Ok(());
 }
 
 impl cucumber_rust::World for MyWorld {}
@@ -78,8 +87,9 @@ mod example_steps {
     steps!(MyWorld => {
 
          given regex r"(\w*) ← (tuple|point|vector)\((.*)\)" |world, matches, _step| {
-             let parsed = build_tuple(world, matches);
-             assert!(parsed.is_ok());
+             let name = &matches[1];
+             let tuple = build_tuple(&matches[2], &matches[3]);
+             world.tuples.insert(name.clone(), tuple);
          };
 
         // a.x = 4.3
@@ -98,9 +108,26 @@ mod example_steps {
             }
         };
 
+
+
+        then regex r"(\w*) - (\w*) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
+            let first = &world.tuples[&matches[1]];
+            let second = &world.tuples[&matches[2]];
+            let tuple = build_tuple(&matches[3], &matches[4]);
+            assert_eq!(tuple, first - second);
+        };
+        then regex r"(\w*) \+ (\w*) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
+            let first = &world.tuples[&matches[1]];
+            let second = &world.tuples[&matches[2]];
+            let tuple = build_tuple(&matches[3], &matches[4]);
+            assert_eq!(tuple, first + second);
+        };
         // `Then p = tuple(4, -4, 3, 1)`
-        then regex r"(\w*) = tuple(4, -4, 3, 1)" |world, matches, _step| {
-            let t =  &world.tuples[&matches[1]];
+        then regex r"^(\w*) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
+            let name = &matches[1];
+            println!("foo is {:?}", name);
+            let tuple = build_tuple(&matches[2], &matches[3]);
+            assert_eq!(world.tuples[name], tuple);
         };
 
         then regex r"(\w*) is a point" |world, matches, _step| {
