@@ -12,8 +12,6 @@ Scenario: The default world
       | material.diffuse   | 0.7                    |
       | material.specular  | 0.2                    |
     And s2 ← sphere() with:
-      # TODO: I added a second table row.
-      | transform | scaling(0.5, 0.5, 0.5) |
       | transform | scaling(0.5, 0.5, 0.5) |
   When w ← default_world()
   Then w.light = light
@@ -97,8 +95,6 @@ Scenario: shade_hit() is given an intersection in shadow
     And s1 ← sphere()
     And s1 is added to w
     And s2 ← sphere() with:
-      # TODO: I added a second row
-      | transform | translation(0, 0, 10) |
       | transform | translation(0, 0, 10) |
     And s2 is added to w
     And r ← ray(point(0, 0, 5), vector(0, 0, 1))
@@ -119,9 +115,9 @@ Scenario: The reflected color for a nonreflective material
 
 Scenario: The reflected color for a reflective material
   Given w ← default_world()
-    And shape ← plane() with:
+    And shape ← plane() with:                 
       | material.reflective | 0.5                   |
-      | transform           | translation(0, -1, 0) |
+      | transform           | translation(0, -1, 0) |   
     And shape is added to w
     And r ← ray(point(0, 0, -3), vector(0, -√2/2, √2/2))
     And i ← intersection(√2, shape)
@@ -164,7 +160,7 @@ Scenario: The reflected color at the maximum recursive depth
     And r ← ray(point(0, 0, -3), vector(0, -√2/2, √2/2))
     And i ← intersection(√2, shape)
   When comps ← prepare_computations(i, r)
-    And color ← reflected_color(w, comps, 0)
+    And color ← reflected_color(w, comps, 0)    
   Then color = color(0, 0, 0)
 
 Scenario: The refracted color with an opaque surface

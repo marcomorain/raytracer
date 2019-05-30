@@ -55,7 +55,7 @@ Scenario Outline: Intersecting a constrained cylinder
   Then xs.count = <count>
 
   Examples:
-    | N | point             | direction         | count |
+    |   | point             | direction         | count |
     | 1 | point(0, 1.5, 0)  | vector(0.1, 1, 0) | 0     |
     | 2 | point(0, 3, -5)   | vector(0, 0, 1)   | 0     |
     | 3 | point(0, 0, -5)   | vector(0, 0, 1)   | 0     |
@@ -78,7 +78,7 @@ Scenario Outline: Intersecting the caps of a closed cylinder
   Then xs.count = <count>
 
   Examples:
-    | X | point            | direction        | count |
+    |   | point            | direction        | count |
     | 1 | point(0, 3, 0)   | vector(0, -1, 0) | 2     |
     | 2 | point(0, 3, -2)  | vector(0, -1, 2) | 2     |
     | 3 | point(0, 4, -2)  | vector(0, -1, 1) | 2     | # corner case

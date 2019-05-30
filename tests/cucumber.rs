@@ -82,11 +82,6 @@ mod example_steps {
              assert!(parsed.is_ok());
          };
 
-         given regex r"(\w*) ← point\((\S+), (\S+), (\S+)\)" |world, matches, _step| {
-             let parsed = build_point(world, matches);
-             assert!(parsed.is_ok());
-         };
-
         // a.x = 4.3
         then regex r"(\w*)\.([w-z]) = ([\-\+]?[0-9]*(\.[0-9]+)?)" |world, matches, _step| {
             let t =  &world.tuples[&matches[1]];

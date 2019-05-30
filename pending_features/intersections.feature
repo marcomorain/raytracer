@@ -19,10 +19,10 @@ Scenario: Precomputing the state of an intersection
 
 Scenario: Precomputing the reflection vector
   Given shape ← plane()
-    And r ← ray(point(0, 1, -1), vector(0, -√2/2, √2/2))
-    And i ← intersection(√2, shape)
+    And r ← ray(point(0, 1, -1), vector(0, -√2/2, √2/2)) 
+    And i ← intersection(√2, shape)                      
   When comps ← prepare_computations(i, r)
-  Then comps.reflectv = vector(0, √2/2, √2/2)
+  Then comps.reflectv = vector(0, √2/2, √2/2)                
 
 Scenario: The hit, when an intersection occurs on the outside
   Given r ← ray(point(0, 0, -5), vector(0, 0, 1))
@@ -46,7 +46,6 @@ Scenario: The hit should offset the point
   Given r ← ray(point(0, 0, -5), vector(0, 0, 1))
     And shape ← sphere() with:
       | transform | translation(0, 0, 1) |
-      | transform | translation(0, 0, 1) |
     And i ← intersection(5, shape)
   When comps ← prepare_computations(i, r)
   Then comps.over_point.z < -EPSILON/2
@@ -55,7 +54,6 @@ Scenario: The hit should offset the point
 Scenario: The under point is offset below the surface
   Given r ← ray(point(0, 0, -5), vector(0, 0, 1))
     And shape ← glass_sphere() with:
-      | transform | translation(0, 0, 1) |
       | transform | translation(0, 0, 1) |
     And i ← intersection(5, shape)
     And xs ← intersections(i)
@@ -118,13 +116,13 @@ Scenario Outline: Finding n1 and n2 at various intersections
       | material.refractive_index | 2.5                     |
     And r ← ray(point(0, 0, -4), vector(0, 0, 1))
     And xs ← intersections(2:A, 2.75:B, 3.25:C, 4.75:B, 5.25:C, 6:A)
-  When comps ← prepare_computations(xs[<index>], r, xs)
+  When comps ← prepare_computations(xs[<index>], r, xs)  
   Then comps.n1 = <n1>
-    And comps.n2 = <n2>
+    And comps.n2 = <n2>             
 
   Examples:
     | index | n1  | n2  |
-    | 0     | 1.0 | 1.5 |
+    | 0     | 1.0 | 1.5 |                 
     | 1     | 1.5 | 2.0 |
     | 2     | 2.0 | 2.5 |
     | 3     | 2.5 | 2.5 |

@@ -9,7 +9,7 @@ Scenario Outline: A ray intersects a cube
     And xs[1].t = <t2>
 
   Examples:
-    | name   | origin            | direction        | t1 | t2 |
+    |        | origin            | direction        | t1 | t2 |
     | +x     | point(5, 0.5, 0)  | vector(-1, 0, 0) |  4 |  6 |
     | -x     | point(-5, 0.5, 0) | vector(1, 0, 0)  |  4 |  6 |
     | +y     | point(0.5, 5, 0)  | vector(0, -1, 0) |  4 |  6 |
