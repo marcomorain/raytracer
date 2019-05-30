@@ -229,6 +229,7 @@ name = "raytracer"
 version = "0.1.0"
 dependencies = [
  "cucumber_rust 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 1.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

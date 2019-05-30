@@ -14,6 +14,14 @@ pub struct MyWorld {
     tuples: HashMap<String, tuple::Tuple>,
 }
 
+fn parse_floats(input: &str) -> Vec<f32> {
+    let nums = input
+        .split(", ")
+        .filter_map(|s| s.parse::<f32>().ok())
+        .collect::<Vec<_>>();
+    return nums;
+}
+
 fn tuple_field(t: &tuple::Tuple, f: &String) -> Result<f32, Box<Error>> {
   return match f.as_ref() {
       "x" => Ok(t.0),
@@ -24,16 +32,32 @@ fn tuple_field(t: &tuple::Tuple, f: &String) -> Result<f32, Box<Error>> {
   }
 }
 
-fn build_tuple(world: &mut MyWorld, s: &[String]) -> Result<(), Box<Error>> {
+fn build_point(world: &mut MyWorld, s: &[String]) -> Result<(), Box<Error>> {
     world.tuples.insert(
         s[1].clone(),
-        tuple::Tuple(
+        tuple::point(
             s[2].parse::<f32>()?,
             s[3].parse::<f32>()?,
             s[4].parse::<f32>()?,
-            s[5].parse::<f32>()?,
         ),
     );
+    return Ok(());
+}
+
+fn build_tuple(world: &mut MyWorld, s: &[String]) -> Result<(), Box<Error>> {
+    let name = &s[1];
+    let class = &s[2];
+    let vals = parse_floats(&s[3]);
+
+    let t = match class.as_ref() {
+        "tuple" => tuple::Tuple(vals[0], vals[1], vals[2], vals[3]),
+        "point" => tuple::point(vals[0], vals[1], vals[2]),
+        "vector" => tuple::vector(vals[0], vals[1], vals[2]),
+        &_ => tuple::Tuple(0.0, 0.0, 0.0, 0.0)
+    };
+
+    world.tuples.insert(name.clone(), t);
+
     return Ok(());
 }
 
@@ -51,16 +75,20 @@ mod example_steps {
 
     use super::*;
 
-    // Any type that implements cucumber_rust::World + Default can be the world
     steps!(MyWorld => {
 
-         given regex r"(\w*) ← tuple\((\S+), (\S+), (\S+), (\S+)\)" |world, matches, step| {
+         given regex r"(\w*) ← (tuple|point|vector)\((.*)\)" |world, matches, _step| {
              let parsed = build_tuple(world, matches);
              assert!(parsed.is_ok());
          };
 
+         given regex r"(\w*) ← point\((\S+), (\S+), (\S+)\)" |world, matches, _step| {
+             let parsed = build_point(world, matches);
+             assert!(parsed.is_ok());
+         };
+
         // a.x = 4.3
-        then regex r"(\w*)\.([w-z]) = ([\-\+]?[0-9]*(\.[0-9]+)?)" |world, matches, step| {
+        then regex r"(\w*)\.([w-z]) = ([\-\+]?[0-9]*(\.[0-9]+)?)" |world, matches, _step| {
             let t =  &world.tuples[&matches[1]];
 
             let val = matches[3].parse::<f32>();
@@ -75,7 +103,12 @@ mod example_steps {
             }
         };
 
-        then regex r"(\w*) is a point" |world, matches, step| {
+        // `Then p = tuple(4, -4, 3, 1)`
+        then regex r"(\w*) = tuple(4, -4, 3, 1)" |world, matches, _step| {
+            let t =  &world.tuples[&matches[1]];
+        };
+
+        then regex r"(\w*) is a point" |world, matches, _step| {
             let name = &matches[1];
             match world.tuples.get(name) {
               Some(t) => assert!(tuple::is_point(t)),
@@ -83,7 +116,7 @@ mod example_steps {
             }
         };
 
-        then regex r"(\w*) is not a point" |world, matches, step| {
+        then regex r"(\w*) is not a point" |world, matches, _step| {
             let name = &matches[1];
             match world.tuples.get(name) {
               Some(t) => assert!(!tuple::is_point(t)),
@@ -91,7 +124,7 @@ mod example_steps {
             }
         };
 
-        then regex r"(\w*) is a vector" |world, matches, step| {
+        then regex r"(\w*) is a vector" |world, matches, _step| {
             let name = &matches[1];
             match world.tuples.get(name) {
               Some(t) => assert!(tuple::is_vector(t)),
@@ -99,7 +132,7 @@ mod example_steps {
             }
         };
 
-        then regex r"(\w*) is not a vector" |world, matches, step| {
+        then regex r"(\w*) is not a vector" |world, matches, _step| {
             let name = &matches[1];
             match world.tuples.get(name) {
               Some(t) => assert!(!tuple::is_vector(t)),
@@ -128,12 +161,12 @@ mod example_steps {
 }
 
 // Declares a before handler function named `a_before_fn`
-before!(a_before_fn => |scenario| {
+before!(a_before_fn => |_scenario| {
 
 });
 
 // Declares an after handler function named `an_after_fn`
-after!(an_after_fn => |scenario| {
+after!(an_after_fn => |_scenario| {
 
 });
 
