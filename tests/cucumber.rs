@@ -16,7 +16,7 @@ pub struct MyWorld {
 }
 
 fn parse_float(input: &str) -> f32 {
-    let re = Regex::new(r"√(.)*").unwrap();
+    let re = Regex::new(r"√(\d+)").unwrap();
     return match re.captures(input) {
         None => input.parse::<f32>().unwrap(),
         Some(m) => m[1].parse::<f32>().unwrap().sqrt(),
@@ -59,9 +59,6 @@ fn tuple_field(t: &tuple::Tuple, f: &String) -> Result<f32, Box<Error>> {
 
 fn build_tuple(class: &String, data: &String) -> tuple::Tuple {
     let vals = parse_floats(data);
-    println!("class is {:?}", class);
-    println!("vals is {:?}", vals);
-
     return match class.as_ref() {
         "tuple" => return tuple::Tuple(vals[0], vals[1], vals[2], vals[3]),
         "point" => tuple::point(vals[0], vals[1], vals[2]),
@@ -123,41 +120,54 @@ mod example_steps {
         // `Then p = tuple(4, -4, 3, 1)`
         then regex r"^(\w+\d?) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
             let name = &matches[1];
-            println!("foo is {:?}", name);
             let tuple = build_tuple(&matches[2], &matches[3]);
             assert_eq!(world.tuples[name], tuple);
         };
 
-        then regex r"(\w+\d?) is a point" |world, matches, _step| {
+        // Then -a = tuple(-1, 2, -3, 4)
+        then regex r"^-(\w+\d?) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
             let name = &matches[1];
-            match world.tuples.get(name) {
-              Some(t) => assert!(tuple::is_point(t)),
-              None => panic!("no tuple named {:?}", name)
-            }
+            let tuple = build_tuple(&matches[2], &matches[3]);
+            assert_eq!(-&world.tuples[name], tuple);
         };
 
+        //  And a is a not point
+        then regex r"(\w+\d?) is a point" |world, matches, _step| {
+            assert!(world.tuples[&matches[1]].is_point())
+        };
+
+        //  And a is a not point
         then regex r"(\w+\d?) is not a point" |world, matches, _step| {
-            let name = &matches[1];
-            match world.tuples.get(name) {
-              Some(t) => assert!(!tuple::is_point(t)),
-              None => panic!("no tuple named {:?}", name)
-            }
+            assert!(!world.tuples[&matches[1]].is_point())
         };
 
         then regex r"(\w+\d?) is a vector" |world, matches, _step| {
-            let name = &matches[1];
-            match world.tuples.get(name) {
-              Some(t) => assert!(tuple::is_vector(t)),
-              None => panic!("no tuple named {:?}", name)
-            }
+            assert!(world.tuples[&matches[1]].is_vector())
         };
 
         then regex r"(\w+\d?) is not a vector" |world, matches, _step| {
+            assert!(!world.tuples[&matches[1]].is_vector())
+        };
+
+        // Then a * 3.5 = tuple(3.5, -7, 10.5, -14)
+        then regex r"^(\w+\d?) \* (\d+(\.\d+)?) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
             let name = &matches[1];
-            match world.tuples.get(name) {
-              Some(t) => assert!(!tuple::is_vector(t)),
-              None => panic!("no tuple named {:?}", name)
-            }
+            let scalar = parse_float(&matches[2]);
+            let tuple = build_tuple(&matches[4], &matches[5]);
+            assert_eq!(tuple, &world.tuples[name] * scalar);
+        };
+
+        // Then a / 3.5 = tuple(3.5, -7, 10.5, -14)
+        then regex r"^(\w+\d?) / (\d+(\.\d+)?) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
+            let name = &matches[1];
+            let scalar = parse_float(&matches[2]);
+            let tuple = build_tuple(&matches[4], &matches[5]);
+            assert_eq!(tuple, &world.tuples[name] / scalar);
+        };
+
+        // Then magnitude(v) = 1
+        then regex r"^magnitude\((\w+\d?)\) = (\S+)" (String, String) |world, name, mag, _step| {
+            assert_eq!(parse_float(&mag), world.tuples[&name].magnitude());
         };
 
         // then regex r"^we can also match (\d+) (.+) types$" (usize, String) |world, num, word, step| {

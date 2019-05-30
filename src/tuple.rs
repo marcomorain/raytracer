@@ -1,6 +1,9 @@
 #![allow(dead_code)]
 
 use std::ops::Add;
+use std::ops::Div;
+use std::ops::Mul;
+use std::ops::Neg;
 use std::ops::Sub;
 
 #[derive(Debug)]
@@ -32,6 +35,37 @@ impl Add for &Tuple {
     }
 }
 
+impl Neg for &Tuple {
+    type Output = Tuple;
+    fn neg(self) -> Tuple {
+        return Tuple(-self.0, -self.1, -self.2, -self.3);
+    }
+}
+
+impl Mul<f32> for &Tuple {
+    type Output = Tuple;
+    fn mul(self, other: f32) -> Tuple {
+        return Tuple(
+            self.0 * other,
+            self.1 * other,
+            self.2 * other,
+            self.3 * other,
+        );
+    }
+}
+
+impl Div<f32> for &Tuple {
+    type Output = Tuple;
+    fn div(self, other: f32) -> Tuple {
+        return Tuple(
+            self.0 / other,
+            self.1 / other,
+            self.2 / other,
+            self.3 / other,
+        );
+    }
+}
+
 impl PartialEq for Tuple {
     fn eq(&self, other: &Tuple) -> bool {
         let eplison = 0.00001;
@@ -43,12 +77,19 @@ impl PartialEq for Tuple {
     }
 }
 
-pub fn is_point(mat: &Tuple) -> bool {
-    return mat.3 == 1.0;
-}
+impl Tuple {
+    pub fn is_point(&self) -> bool {
+        return self.3 == 1.0;
+    }
 
-pub fn is_vector(mat: &Tuple) -> bool {
-    return mat.3 == 0.0;
+    pub fn is_vector(&self) -> bool {
+        return self.3 == 0.0;
+    }
+
+    pub fn magnitude(&self) -> f32 {
+        return ((self.0 * self.0) + (self.1 * self.1) + (self.2 * self.2) + (self.3 * self.3))
+            .sqrt();
+    }
 }
 
 pub fn point(x: f32, y: f32, z: f32) -> Tuple {
