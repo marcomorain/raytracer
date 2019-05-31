@@ -90,6 +90,26 @@ impl Tuple {
         return ((self.0 * self.0) + (self.1 * self.1) + (self.2 * self.2) + (self.3 * self.3))
             .sqrt();
     }
+
+    pub fn normalize(&self) -> Tuple {
+        let mag = self.magnitude();
+        return Tuple(self.0 / mag, self.1 / mag, self.2 / mag, self.3 / mag);
+    }
+
+    pub fn dot(&self, other: &Tuple) -> f32 {
+        return self.0 * other.0
+            + self.1 * other.1
+            + self.2 * other.2
+            + self.3 * other.3;
+    }
+
+    pub fn cross(&self, other: &Tuple) -> Tuple {
+        return vector(
+            self.1 * other.2 - self.2 * other.1,
+            self.2 * other.0 - self.0 * other.2,
+            self.0 * other.1 - self.1 * other.0,
+        );
+    }
 }
 
 pub fn point(x: f32, y: f32, z: f32) -> Tuple {

@@ -77,16 +77,27 @@ impl std::default::Default for MyWorld {
     }
 }
 
+fn approx_equal(expected: f32, actual: f32) {
+    let epslison = 0.00001;
+    assert!((expected - actual).abs() < epslison,
+    "expected: {} actual: {}", expected, actual);
+}
+
 mod example_steps {
 
     use super::*;
 
     steps!(MyWorld => {
 
-         given regex r"(\w+\d?) ← (tuple|point|vector)\((.*)\)" |world, matches, _step| {
-             let name = &matches[1];
-             let tuple = build_tuple(&matches[2], &matches[3]);
+         given regex r"(\w+\d?) ← (tuple|point|vector)\((.+)\)" (String, String, String) |world, name, class, data, _step| {
+             let tuple = build_tuple(&class, &data);
              world.tuples.insert(name.clone(), tuple);
+         };
+
+         // When norm ← normalize(v)
+         when regex r"(\w+\d?) ← normalize\((\w+\d?)\)" (String, String) |world, dst, src, _step| {
+             let tuple = world.tuples[&src].normalize();
+             world.tuples.insert(dst.clone(), tuple);
          };
 
         // a.x = 4.3
@@ -150,7 +161,7 @@ mod example_steps {
         };
 
         // Then a * 3.5 = tuple(3.5, -7, 10.5, -14)
-        then regex r"^(\w+\d?) \* (\d+(\.\d+)?) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
+        then regex r"^(\w+\d?) \* (\d+(\.\d+)?) = (tuple|point|vector)\((.+)\)" |world, matches, _step| {
             let name = &matches[1];
             let scalar = parse_float(&matches[2]);
             let tuple = build_tuple(&matches[4], &matches[5]);
@@ -158,7 +169,7 @@ mod example_steps {
         };
 
         // Then a / 3.5 = tuple(3.5, -7, 10.5, -14)
-        then regex r"^(\w+\d?) / (\d+(\.\d+)?) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
+        then regex r"^(\w+\d?) / (\d+(\.\d+)?) = (tuple|point|vector)\((.+)\)" |world, matches, _step| {
             let name = &matches[1];
             let scalar = parse_float(&matches[2]);
             let tuple = build_tuple(&matches[4], &matches[5]);
@@ -167,7 +178,27 @@ mod example_steps {
 
         // Then magnitude(v) = 1
         then regex r"^magnitude\((\w+\d?)\) = (\S+)" (String, String) |world, name, mag, _step| {
-            assert_eq!(parse_float(&mag), world.tuples[&name].magnitude());
+            approx_equal(parse_float(&mag), world.tuples[&name].magnitude());
+        };
+
+        // Then normalize(v) = vector(1, 0, 0)
+        then regex r"^normalize\((\w+\d?)\) = (?:approximately\s)?(vector)\((.+)\)" (String, String, String) |world, name, class, data, _step| {
+            let tuple = build_tuple(&class, &data);
+            let n = world.tuples[&name].normalize();
+            assert_eq!(n, tuple);
+        };
+
+
+        // Then dot(a, b) = 20
+        then regex r"^dot\((\w+\d?), (\w+\d?)\) = (\S+)" (String, String, String) |world, a, b, mag, _step| {
+            approx_equal(parse_float(&mag), world.tuples[&a].dot(&world.tuples[&b]));
+        };
+
+        // Then cross(a, b) = vector(-1, 2, -1)
+        then regex r"^cross\((\w+\d?), (\w+\d?)\) = (tuple|point|vector)\((.+)\)" (String, String, String, String) |world, a, b, class, data, _step| {
+            let expected = build_tuple(&class, &data);
+            let actual = world.tuples[&a].cross(&world.tuples[&b]);
+            assert_eq!(expected, actual);
         };
 
         // then regex r"^we can also match (\d+) (.+) types$" (usize, String) |world, num, word, step| {
