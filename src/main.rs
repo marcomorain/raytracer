@@ -1,23 +1,33 @@
 #![allow(dead_code)]
 
-pub mod tuple;
-use regex::Regex;
-use std::vec::Vec;
+use raytracer::tuple::*;
 
-fn parse_floats(input: &str) -> Vec<f32> {
-    let nums = input
-        .split(", ")
-        .filter_map(|s| s.parse::<f32>().ok())
-        .collect::<Vec<_>>();
-    return nums;
+fn tick(env: &Environment, proj: &Projectile) -> Projectile {
+    return Projectile {
+        position: &proj.position + &proj.velocity,
+        velocity: &proj.velocity + &(&env.gravity + &env.wind)
+    };
 }
 
 fn main() {
-    let re = Regex::new(r"(tuple|point|vector)\((.*)\)").unwrap();
-    let caps = re.captures("tuple(1, 2, 3)").unwrap();
-    assert_eq!("tuple", &caps[1]);
-    let e = vec![1.0, 2.0, 3.0];
-    assert_eq!(e, parse_floats(&caps[2]));
+
+
+    let env = Environment {
+        gravity: vector(0.0, -0.1, 0.0),
+        wind: vector(-0.01, 0.0, 0.0)
+    };
+
+    let mut p = Projectile {
+        position: point(0.0, 1.0, 0.0),
+        velocity: vector(1.0, 1.0, 0.0).normalize(),
+    };
+
+    while p.position.1 > 0.0 {
+      println!("At {:?}", p);
+      p = tick(&env, &p)
+    }
+
+    println!("At {:?}", p);
 
     println!("Go speedracer!");
 }

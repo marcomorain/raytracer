@@ -79,8 +79,12 @@ impl std::default::Default for MyWorld {
 
 fn approx_equal(expected: f32, actual: f32) {
     let epslison = 0.00001;
-    assert!((expected - actual).abs() < epslison,
-    "expected: {} actual: {}", expected, actual);
+    assert!(
+        (expected - actual).abs() < epslison,
+        "expected: {} actual: {}",
+        expected,
+        actual
+    );
 }
 
 mod example_steps {

@@ -9,6 +9,17 @@ use std::ops::Sub;
 #[derive(Debug)]
 pub struct Tuple(pub f32, pub f32, pub f32, pub f32);
 
+pub struct Environment {
+    pub gravity: Tuple,
+    pub wind: Tuple,
+}
+
+#[derive(Debug)]
+pub struct Projectile {
+    pub position: Tuple,
+    pub velocity: Tuple,
+}
+
 impl Sub for &Tuple {
     type Output = Tuple;
 
@@ -97,10 +108,7 @@ impl Tuple {
     }
 
     pub fn dot(&self, other: &Tuple) -> f32 {
-        return self.0 * other.0
-            + self.1 * other.1
-            + self.2 * other.2
-            + self.3 * other.3;
+        return self.0 * other.0 + self.1 * other.1 + self.2 * other.2 + self.3 * other.3;
     }
 
     pub fn cross(&self, other: &Tuple) -> Tuple {
