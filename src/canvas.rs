@@ -57,6 +57,11 @@ impl Canvas {
                     color(pixel.2)
                 )
                 .unwrap();
+
+                if x < (self.w - 1) {
+                    ppm.push_str(" ");
+                }
+
             }
             ppm.push_str("\n");
         }
