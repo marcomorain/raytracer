@@ -5,6 +5,7 @@ use std::collections::HashMap;
 use std::error::Error;
 use std::string::String;
 
+use raytracer::canvas;
 use raytracer::tuple;
 
 #[macro_use]
@@ -13,6 +14,7 @@ extern crate cucumber_rust;
 #[derive(Debug)]
 pub struct MyWorld {
     tuples: HashMap<String, tuple::Tuple>,
+    canvases: HashMap<String, canvas::Canvas>,
 }
 
 fn parse_float(input: &str) -> f32 {
@@ -53,9 +55,9 @@ fn tuple_field(t: &tuple::Tuple, f: &String) -> Result<f32, Box<Error>> {
         "y" => Ok(t.1),
         "z" => Ok(t.2),
         "w" => Ok(t.3),
-        "red"   => Ok(t.0),
+        "red" => Ok(t.0),
         "green" => Ok(t.1),
-        "blue"  => Ok(t.2),
+        "blue" => Ok(t.2),
         _ => return Err("No matching field".into()),
     };
 }
@@ -77,6 +79,7 @@ impl std::default::Default for MyWorld {
         // This function is called every time a new scenario is started
         MyWorld {
             tuples: HashMap::new(),
+            canvases: HashMap::new(),
         }
     }
 }
@@ -100,6 +103,17 @@ mod example_steps {
          given regex r"(\w+\d?) ← (tuple|point|vector|color)\((.+)\)" (String, String, String) |world, name, class, data, _step| {
              let tuple = build_tuple(&class, &data);
              world.tuples.insert(name.clone(), tuple);
+         };
+
+         // Given c ← canvas(5, 3)
+         given regex r"(\w+\d?) ← canvas\((\d+), (\d+)\)" (String, usize, usize) |world, name, w, h, _step| {
+             let canvas = canvas::canvas(w, h);
+             world.canvases.insert(name.clone(), canvas);
+         };
+
+         // When write_pixel(c, 2, 3, red)
+         when regex r"write_pixel\((\w+\d?), (\d+), (\d+), (\w+\d?)\)" (String, usize, usize, String) |world, canvas, w, h, color, _step| {
+             world.canvases.get_mut(&canvas).unwrap().write_pixel(w, h, &world.tuples[&color]);
          };
 
          // When norm ← normalize(v)
@@ -208,11 +222,10 @@ mod example_steps {
             assert_eq!(expected, actual);
         };
 
-        // then regex r"^we can also match (\d+) (.+) types$" (usize, String) |world, num, word, step| {
-        //     // `num` will be of type usize, `word` of type String
-        //     assert_eq!(num, 42);
-        //     assert_eq!(word, "olika");
-        // };
+        // Then pixel_at(c, 2, 3) = red
+        then regex r"^pixel_at\((\w+\d?), (\d+), (\d+)\) = (\w+\d?)" (String, usize, usize, String) |world, canvas, w, h, color, _step| {
+            assert_eq!(&world.tuples[&color], world.canvases[&canvas].pixel_at(w, h));
+        };
 
         // then "we can use data tables to provide more parameters" |world, step| {
         //     let table = step.table().unwrap().clone();

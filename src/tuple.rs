@@ -6,8 +6,10 @@ use std::ops::Mul;
 use std::ops::Neg;
 use std::ops::Sub;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct Tuple(pub f32, pub f32, pub f32, pub f32);
+
+pub const ZERO: Tuple = Tuple(0.0, 0.0, 0.0, 0.0);
 
 pub struct Environment {
     pub gravity: Tuple,
