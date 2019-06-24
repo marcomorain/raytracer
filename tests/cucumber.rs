@@ -53,6 +53,9 @@ fn tuple_field(t: &tuple::Tuple, f: &String) -> Result<f32, Box<Error>> {
         "y" => Ok(t.1),
         "z" => Ok(t.2),
         "w" => Ok(t.3),
+        "red"   => Ok(t.0),
+        "green" => Ok(t.1),
+        "blue"  => Ok(t.2),
         _ => return Err("No matching field".into()),
     };
 }
@@ -63,6 +66,7 @@ fn build_tuple(class: &String, data: &String) -> tuple::Tuple {
         "tuple" => return tuple::Tuple(vals[0], vals[1], vals[2], vals[3]),
         "point" => tuple::point(vals[0], vals[1], vals[2]),
         "vector" => tuple::vector(vals[0], vals[1], vals[2]),
+        "color" => return tuple::color(vals[0], vals[1], vals[2]),
         _ => panic!("failed to parse tuple {:?} {:?}", class, vals),
     };
 }
@@ -93,7 +97,7 @@ mod example_steps {
 
     steps!(MyWorld => {
 
-         given regex r"(\w+\d?) ← (tuple|point|vector)\((.+)\)" (String, String, String) |world, name, class, data, _step| {
+         given regex r"(\w+\d?) ← (tuple|point|vector|color)\((.+)\)" (String, String, String) |world, name, class, data, _step| {
              let tuple = build_tuple(&class, &data);
              world.tuples.insert(name.clone(), tuple);
          };
@@ -105,28 +109,21 @@ mod example_steps {
          };
 
         // a.x = 4.3
-        then regex r"(\w+\d?)\.([w-z]) = ([\-\+]?[0-9]*(\.[0-9]+)?)" |world, matches, _step| {
-            let t =  &world.tuples[&matches[1]];
-
-            let val = matches[3].parse::<f32>();
-
-            if val.is_err() {
-                panic!("parse error");
-            } else {
-                match tuple_field(&t, &matches[2]) {
-                    Ok(e) => assert_eq!(e, val.unwrap()),
-                    Err(e) => panic!("field error {:?}", e)
-                }
+        then regex r"(\w+\d?)\.([w-z]|red|green|blue) = (.+)" (String, String, String)|world, var, field, data, _step| {
+            let val = parse_rational(&data);
+            match tuple_field(&world.tuples[&var], &field) {
+                Ok(e) => assert_eq!(e, val),
+                Err(e) => panic!("field error {:?}", e)
             }
         };
 
-        then regex r"(\w+\d?) - (\w+\d?) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
+        then regex r"(\w+\d?) - (\w+\d?) = (tuple|point|vector|color)\((.*)\)" |world, matches, _step| {
             let first = &world.tuples[&matches[1]];
             let second = &world.tuples[&matches[2]];
             let tuple = build_tuple(&matches[3], &matches[4]);
             assert_eq!(tuple, first - second);
         };
-        then regex r"(\w+\d?) \+ (\w+\d?) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
+        then regex r"(\w+\d?) \+ (\w+\d?) = (tuple|point|vector|color)\((.*)\)" |world, matches, _step| {
             let first = &world.tuples[&matches[1]];
             let second = &world.tuples[&matches[2]];
             let tuple = build_tuple(&matches[3], &matches[4]);
@@ -140,7 +137,7 @@ mod example_steps {
         };
 
         // Then -a = tuple(-1, 2, -3, 4)
-        then regex r"^-(\w+\d?) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
+        then regex r"^-(\w*\d?) = (tuple|point|vector)\((.*)\)" |world, matches, _step| {
             let name = &matches[1];
             let tuple = build_tuple(&matches[2], &matches[3]);
             assert_eq!(-&world.tuples[name], tuple);
@@ -165,11 +162,17 @@ mod example_steps {
         };
 
         // Then a * 3.5 = tuple(3.5, -7, 10.5, -14)
-        then regex r"^(\w+\d?) \* (\d+(\.\d+)?) = (tuple|point|vector)\((.+)\)" |world, matches, _step| {
+        then regex r"^(\w+\d?) \* (\d+(\.\d+)?) = (tuple|point|vector|color)\((.+)\)" |world, matches, _step| {
             let name = &matches[1];
             let scalar = parse_float(&matches[2]);
             let tuple = build_tuple(&matches[4], &matches[5]);
             assert_eq!(tuple, &world.tuples[name] * scalar);
+        };
+
+        // Then c1 * c2 = color(0.9, 0.2, 0.04)
+        then regex r"^(\w+\d?) \* (\D+\d?) = (tuple|point|vector|color)\((.+)\)" (String, String, String, String) |world, c1, c2, class, data, _step| {
+            let tuple = build_tuple(&class, &data);
+            assert_eq!(tuple, &world.tuples[&c1] * &world.tuples[&c2]);
         };
 
         // Then a / 3.5 = tuple(3.5, -7, 10.5, -14)

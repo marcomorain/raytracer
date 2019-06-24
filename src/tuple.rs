@@ -65,6 +65,18 @@ impl Mul<f32> for &Tuple {
     }
 }
 
+impl Mul for &Tuple {
+    type Output = Tuple;
+    fn mul(self, other: &Tuple) -> Tuple {
+        return Tuple(
+            self.0 * other.0,
+            self.1 * other.1,
+            self.2 * other.2,
+            self.3 * other.3,
+        );
+    }
+}
+
 impl Div<f32> for &Tuple {
     type Output = Tuple;
     fn div(self, other: f32) -> Tuple {
@@ -126,4 +138,8 @@ pub fn point(x: f32, y: f32, z: f32) -> Tuple {
 
 pub fn vector(x: f32, y: f32, z: f32) -> Tuple {
     return Tuple(x, y, z, 0.0);
+}
+
+pub fn color(red: f32, green: f32, blue: f32) -> Tuple {
+    return Tuple(red, green, blue, 0.0);
 }
